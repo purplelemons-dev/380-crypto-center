@@ -1,6 +1,7 @@
 import urllib.request as request
 
 def prices(curs: list):
+    """Outputs a dictionary of currencies and their (pseudo-)current market prices according to https://coinmarketcap.com"""
     out={}
     for currency in curs:
         with request.urlopen(f"https://coinmarketcap.com/currencies/{currency}") as cmc:

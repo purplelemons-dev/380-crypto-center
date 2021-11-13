@@ -1,40 +1,25 @@
 import urllib.request as request
-
+from bs4 import BeautifulSoup as bs4
 
 def addrRes(addr:str,currency:str):
-    url=f"https://blockchair.com/{currency}/address/{addr}"
+    """Returns a string of the value of the wallet given currency and address."""
+    url=f"https://blockchair.com/{currency}/address/{addr}/"
+
     with request.urlopen(url) as blkchr:
         page=blkchr.read().decode()
+    
+    soup=bs4(page,"html.parser")
 
-    idx=page.find("<span v-update:raw=\"value !== defaultValue ? value : undefined \" v-mount:raw=\"value !== defaultValue ? value : undefined \" v-tooltip=\"''\" class=\"wb-ba\">")
-    return (page)
-    curStr=page[idx:idx+40].split(">")[1]
-    txtPrice=curStr[1:-5]
-    return txtPrice
+    one=soup.find_all("span", class_="value-wrapper d-iflex ai-center",attrs={":value":"data ? data.balance_usd : null"})[0].find_all("span",class_="wb-ba")[0]
 
+    return one.string
+
+def priceToInt(price:str):
+    return float(price.strip().replace(",",""))
+    
 if __name__=="__main__":
     eth="0xaae8b51a07140c5ab749cbe4a3f56d32969ac4e8"
+    dot="14i9mu3spoub2gi29W6ngemNoN4NcJVyPKCjwuMRKR8cto41"
     cur="ethereum"
-    print(addrRes(eth,cur))
-
-# ignore this:
-"""
-def BTCRes(addr: str):
-    url="https://www.blockchain.com/btc/address/"
-
-def ETHRes(addr: str):
-    url="https://www.blockchain.com/eth/address/"
-
-def XDGRes(addr: str):
-    pass
-
-def DOTRes(addr: str):
-    pass
-
-def SOLRes(addr:str):
-    pass
-
-def ADARes(addr: str):
-    pass
-
-#"""
+    price=addrRes(eth,cur)
+    print(f"${price}", priceToInt(price))
