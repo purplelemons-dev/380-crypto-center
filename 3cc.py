@@ -106,8 +106,9 @@ async def on_message(message: discord.Message):
                 query+=f"\nTOTAL : ${total}"
                         
                 await m.edit(content=f"Here you are, {author_.display_name}```\n{query}```",allowed_mentions=discord.AllowedMentions.none())
+                return
             
-            elif command[1]=="add":
+            elif command[1]=="add" and len(command)==4:
                 m=await message.reply(f"{author_.display_name}, working on that for you...", mention_author=False)
 
                 # extracts the currency and address
@@ -120,6 +121,7 @@ async def on_message(message: discord.Message):
 
                 else:
                     await m.edit(content=f"{author_.display_name}, it looks like I can't keep track of a \"{cur}\" wallet.\nThis could be a spelling error, but if this is not the case, please contact MR_H3ADSH0T.",allowed_mentions=discord.AllowedMentions.none())
+                    return
 
             elif command[1]=="remove" and len(command)==3:
                 m=await message.reply(f"{author_.display_name}, working on that for you...", mention_author=False)
@@ -132,17 +134,17 @@ async def on_message(message: discord.Message):
                     client.wallets[author_.id].pop(cur)
 
                     await m.edit(content=f"Removed \"{cur}\" from your list of wallets.",allowed_mentions=discord.AllowedMentions.none())
+                    return
 
                 else:
                     walletStr=",".join(currency for currency in client.wallets[author_.id])
 
                     await m.edit(content=f"\"{command[2]}\" is not in your list of wallets ({walletStr}).",allowed_mentions=discord.AllowedMentions.none())
-
-            elif len(client.wallets[author_.id])==0:
-                await message.reply(f"You do not have any wallets linked. Please use `!wallet add [currency] [address]`", mention_author=False)
+                    return
             
             else:
                 await message.reply(f"Invalid command usage. Expected `!wallet [add/remove] [currency] [address]` or `!wallet ?`", mention_author=False)
+                return
 
 
 # run bot until there is either an external interupt or an internal disconnect request.
