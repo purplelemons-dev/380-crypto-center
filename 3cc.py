@@ -1,15 +1,15 @@
 # some required libraries - use: pip install discord.py python-dotenv requests beautifulsoup4 tzlocal
-import os, discord, asyncio as aio, random as rand
+import discord, asyncio as aio, random as rand
 from cryptoPrice import prices # ./cryptoPrice.py
 from walletFile import save, load # ./walletFile.py
 from cryptoAddressResolver import addrRes, priceToInt
 from datetime import datetime as datet
-from timeit import default_timer as dt
 from dotenv import dotenv_values as dev
 
 intents=discord.Intents.all()
 client=discord.Client(intents=intents)
 token=dict(dev(".env"))["3cctoken"]
+acptCurs=["bitcoin","ethereum","polkadot","dogecoin","cardano","ripple","bitcoin-cash","litecoin","zcash","monero","dash","stellar","bitcoin-sv","eos","ecash","mixin","groestlcoin"]
 
 @client.event
 async def on_ready():
@@ -21,11 +21,12 @@ async def on_ready():
     client.mainActive=True
 
     # an awful way of aggregating all currencies
-    client.currencies=[]
-    for userWallet in client.wallets:
-        for currency in client.wallets[userWallet]:
-            if currency not in client.currencies:
-                client.currencies+=[currency]
+    #client.currencies=[]
+    #for userWallet in client.wallets:
+    #    for currency in client.wallets[userWallet]:
+    #        if currency not in client.currencies:
+    #            client.currencies+=[currency]
+    client.currencies=acptCurs
 
     # bot statistics
     servers=client.guilds
@@ -108,24 +109,34 @@ async def on_message(message: discord.Message):
             
             elif command[1]=="add":
                 m=await message.reply(f"{author_.display_name}, working on that for you...", mention_author=False)
-                # extracts the currency
-                cur=message.content.split("add")[-1].strip().split(" ")[0]
-                # extracts the address
-                addr=message.content.split("add")[-1].split(" ")[-1]
 
-                client.wallets[author_.id][cur]=addr
+                # extracts the currency and address
+                cur,addr=command[2],command[3]
+                
+                if cur in acptCurs:
+                    client.wallets[author_.id][cur]=addr
 
-                await m.edit(content=f"{author_.display_name}, your wallet at address `{addr}` from the \"{cur}\" currency is worth `${addrRes(addr,cur)}`\nIf that's not correct, check your spelling and issue the command again.",allowed_mentions=discord.AllowedMentions.none())
+                    await m.edit(content=f"{author_.display_name}, your wallet at address `{addr}` from the \"{cur}\" currency is worth `${addrRes(addr,cur)}`\nIf that's not correct, check your spelling and issue the command again.",allowed_mentions=discord.AllowedMentions.none())
+
+                else:
+                    await m.edit(content=f"{author_.display_name}, it looks like I can't keep track of a \"{cur}\" wallet.\nThis could be a spelling error, but if this is not the case, please contact MR_H3ADSH0T.",allowed_mentions=discord.AllowedMentions.none())
 
             elif command[1]=="remove" and len(command)==3:
                 m=await message.reply(f"{author_.display_name}, working on that for you...", mention_author=False)
-                # extracts the currency
-                cur=message.content.split("remove")[-1].strip().split(" ")[0]
 
-                # removes the listed currency from the wallet
-                client.wallets[author_.id].pop(cur)
+                if command[2] in client.wallets[author_.id]:
+                    # extracts the currency
+                    cur=message.content.split("remove")[-1].strip().split(" ")[0]
 
-                await m.edit(content=f"Removed {cur} from your list of wallets.",allowed_mentions=discord.AllowedMentions.none())
+                    # removes the listed currency from the wallet
+                    client.wallets[author_.id].pop(cur)
+
+                    await m.edit(content=f"Removed \"{cur}\" from your list of wallets.",allowed_mentions=discord.AllowedMentions.none())
+
+                else:
+                    walletStr=",".join(currency for currency in client.wallets[author_.id])
+
+                    await m.edit(content=f"\"{command[2]}\" is not in your list of wallets ({walletStr}).",allowed_mentions=discord.AllowedMentions.none())
 
             elif len(client.wallets[author_.id])==0:
                 await message.reply(f"You do not have any wallets linked. Please use `!wallet add [currency] [address]`", mention_author=False)
